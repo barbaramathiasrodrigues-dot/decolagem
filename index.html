@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🚀 Decolagem</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      background: #fbfbf9;
+      color: #2d312e;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .fade-in {
+      animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .card-option {
+      transition: all 0.2s ease;
+      border: 1px solid #e2e8f0;
+    }
+    .card-option:active {
+      transform: scale(0.98);
+    }
+    .progress-bar-inner {
+      transition: width 0.4s ease-in-out;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-3">
+
+  <main id="appContainer" class="w-full max-w-md bg-white rounded-3xl shadow-xl shadow-gray-100/80 border border-gray-100 p-5 min-h-[520px] flex flex-col justify-between overflow-hidden relative">
+    
+    <!-- Barra de Progresso Superior (Oculta na Home) -->
+    <header id="headerProgress" class="hidden mb-4">
+      <div class="flex justify-between items-center text-[11px] font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">
+        <span id="stepLabel">DECOLAGEM</span>
+        <span id="stepCounter">0/0</span>
+      </div>
+      <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+        <div id="progressBar" class="progress-bar-inner bg-emerald-500 h-full w-0"></div>
+      </div>
+    </header>
+
+    <!-- Conteúdo Dinâmico -->
+    <section id="stepContent" class="flex-grow flex flex-col justify-center my-auto fade-in">
+      <!-- Injetado via JS -->
+    </section>
+
+    <!-- Rodapé Discreto -->
+    <footer id="appFooter" class="text-center pt-3 border-t border-gray-50 text-[11px] text-gray-300">
+      🚀 Decolagem • Modo de Sobrevivência Ativo
+    </footer>
+
+  </main>
+
+  <!-- Firebase SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { 
+      getFirestore, 
+      collection, 
+      addDoc, 
+      serverTimestamp 
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // Firebase Config (Mesmo projeto do anterior)
+    const firebaseConfig = {
+      apiKey: "AIzaSyCYvPDnsLv0hJ9sIqFkgBzgghUzG6RE2lU",
+      authDomain: "processos-52f4c.firebaseapp.com",
+      projectId: "processos-52f4c",
+      storageBucket: "processos-52f4c.firebasestorage.app",
+      messagingSenderId: "264532406198",
+      appId: "1:264532406198:web:7f6ff2c970a707cbe41b17",
+      measurementId: "G-G49JYR1QPX"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const registrosCol = collection(db, "decolagem_registros");
+
+    // Banco de Tarefas / Etapas
+    const tarefasHard: array = [
+      { id: "remedios", icone: "💊", titulo: "Remédios + Água", detalhe: "Prioridade absoluta. Coma algo se necessário.", essenciaisApenas: true },
+      { id: "desodorante", icone: "🧴", titulo: "Desodorante", detalhe: "Ação rápida de higiene básica.", essenciaisApenas: true },
+      { id: "dentes", icone: "🪥", titulo: "Escovar Dentes", detalhe: "Higiene mínima.", essenciaisApenas: false },
+      { id: "cabelo", icone: "💇‍♀️", titulo: "Prender / Pentear Cabelo", detalhe: "Coque ou rabo em 30 segundos.", essenciaisApenas: false },
+      { id: "combustivel", icone: "🥤", titulo: "Garrafa d'Água & Lanche", detalhe: "Pegue a garrafa abastecida.", essenciaisApenas: true },
+      { id: "pets", icone: "🐶", titulo: "Pets Protegidos", detalhe: "Água, comida e 10s de carinho.", essenciaisApenas: true },
+      { id: "porta", icone: "🚪", titulo: "Check-in de Saída (Na Mão)", detalhe: "Celular, Carteira, Chaves e Bolsa.", essenciaisApenas: true },
+    ];
+
+    // Estado Atual do App
+    let estado = {
+      humor: null, // 'verde', 'amarelo', 'vermelho'
+      modoEmergencia: false,
+      tarefasFiltradas: [],
+      passoAtualIndex: 0,
+      respostasCorpo: [],
+      missaoEscolhida: null,
+      missaoDetalhe: null
+    };
+
+    const stepContent = document.getElementById("stepContent");
+    const headerProgress = document.getElementById("headerProgress");
+    const progressBar = document.getElementById("progressBar");
+    const stepCounter = document.getElementById("stepCounter");
+
+    // 1. TELA INICIAL: Estado Emocional/Físico
+    function renderInicio() {
+      headerProgress.classList.add("hidden");
+      stepContent.className = "flex-grow flex flex-col justify-center my-auto fade-in";
+      stepContent.innerHTML = `
+        <div class="text-center space-y-2 mb-6">
+          <span class="text-4xl">🌱</span>
+          <h1 class="text-2xl font-bold text-gray-800">Bom dia, Bárbara</h1>
+          <p class="text-xs text-gray-500 font-medium">Como o corpo acordou hoje?</p>
+        </div>
+
+        <div class="space-y-3">
+          <button onclick="selecionarEstado('verde')" class="card-option w-full p-4 rounded-2xl bg-emerald-50/60 hover:bg-emerald-50 border-emerald-100 flex items-center justify-between text-left">
+            <div class="flex items-center gap-3">
+              <span class="text-2xl">🟢</span>
+              <div>
+                <div class="font-bold text-emerald-900 text-sm">Bem</div>
+                <div class="text-[11px] text-emerald-700">Energia normal / Fluxo completo</div>
+              </div>
+            </div>
+            <span class="text-emerald-400 font-bold">→</span>
+          </button>
+
+          <button onclick="selecionarEstado('amarelo')" class="card-option w-full p-4 rounded-2xl bg-amber-50/60 hover:bg-amber-50 border-amber-100 flex items-center justify-between text-left">
+            <div class="flex items-center gap-3">
+              <span class="text-2xl">🟡</span>
+              <div>
+                <div class="font-bold text-amber-900 text-sm">Médio</div>
+                <div class="text-[11px] text-amber-700">Cansaço presente / Foco reduzido</div>
+              </div>
+            </div>
+            <span class="text-amber-400 font-bold">→</span>
+          </button>
+
+          <button onclick="selecionarEstado('vermelho')" class="card-option w-full p-4 rounded-2xl bg-rose-50/60 hover:bg-rose-50 border-rose-100 flex items-center justify-between text-left">
+            <div class="flex items-center gap-3">
+              <span class="text-2xl">🔴</span>
+              <div>
+                <div class="font-bold text-rose-900 text-sm">Difícil</div>
+                <div class="text-[11px] text-rose-700">Modo Despressurização (Mínimo essencial)</div>
+              </div>
+            </div>
+            <span class="text-rose-400 font-bold">→</span>
+          </button>
+        </div>
+      `;
+    }
+
+    // Processa a escolha do estado
+    window.selecionarEstado = (humor) => {
+      estado.humor = humor;
+      estado.modoEmergencia = (humor === 'vermelho');
+
+      // Filtra tarefas se for emergência
+      if (estado.modoEmergencia) {
+        estado.tarefasFiltradas = tarefasHard.filter(t => t.essenciaisApenas);
+      } else {
+        estado.tarefasFiltradas = [...tarefasHard];
+      }
+
+      estado.passoAtualIndex = 0;
+      renderPassos();
+    };
+
+    // 2. EXIBIÇÃO DE TAREFAS - Uma por uma
+    function renderPassos() {
+      headerProgress.classList.remove("hidden");
+      const total = estado.tarefasFiltradas.length;
+      const atual = estado.passoAtualIndex;
+
+      if (atual >= total) {
+        renderCheckCorporal();
+        return;
+      }
+
+      const tarefa = estado.tarefasFiltradas[atual];
+      const percent = Math.round(((atual) / total) * 100);
+      progressBar.style.width = `${percent}%`;
+      stepCounter.textContent = `${atual + 1}/${total}`;
+
+      stepContent.className = "flex-grow flex flex-col justify-between my-auto py-4 fade-in";
+      stepContent.innerHTML = `
+        <div>
+          ${estado.modoEmergencia ? `
+            <div class="inline-block px-2.5 py-1 bg-rose-100 text-rose-700 text-[10px] font-bold rounded-full mb-4">
+              🚨 MODO DESPRESSURIZAÇÃO ATIVO
+            </div>
+          ` : ''}
+          <div class="text-center space-y-3 my-6">
+            <span class="text-6xl block transform hover:scale-105 transition">${tarefa.icone}</span>
+            <h2 class="text-xl font-bold text-gray-800">${tarefa.titulo}</h2>
+            <p class="text-xs text-gray-500 max-w-xs mx-auto leading-relaxed">${tarefa.detalhe}</p>
+          </div>
+        </div>
+
+        <button onclick="proximaTarefa()" class="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-semibold text-sm shadow-lg shadow-emerald-600/20 active:scale-95 transition">
+          Concluído ✓
+        </button>
+      `;
+    }
+
+    window.proximaTarefa = () => {
+      estado.passoAtualIndex++;
+      renderPassos();
+    };
+
+    // 3. CHECK CORPORAL RELÂMPAGO (4 bolhas intuitivas)
+    function renderCheckCorporal() {
+      progressBar.style.width = `85%`;
+      stepCounter.textContent = `Regulação`;
+
+      stepContent.className = "flex-grow flex flex-col justify-between my-auto py-2 fade-in";
+      stepContent.innerHTML = `
+        <div class="space-y-4">
+          <div class="text-center">
+            <span class="text-3xl">🧘‍♀️</span>
+            <h2 class="text-lg font-bold text-gray-800 mt-1">Check Corporal Relâmpago</h2>
+            <p class="text-xs text-gray-400">Toque no que sente agora:</p>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <button id="btn_resp" onclick="toggleCorpo('resp')" class="card-option p-3 rounded-2xl text-center bg-gray-50">
+              <span class="text-2xl block mb-1">🙂</span>
+              <span class="text-xs font-semibold text-gray-700">Respiração</span>
+            </button>
+            <button id="btn_mand" onclick="toggleCorpo('mand')" class="card-option p-3 rounded-2xl text-center bg-gray-50">
+              <span class="text-2xl block mb-1">😬</span>
+              <span class="text-xs font-semibold text-gray-700">Mandíbula Solta</span>
+            </button>
+            <button id="btn_pressa" onclick="toggleCorpo('pressa')" class="card-option p-3 rounded-2xl text-center bg-gray-50">
+              <span class="text-2xl block mb-1">🏃</span>
+              <span class="text-xs font-semibold text-gray-700">Pressa Alta</span>
+            </button>
+            <button id="btn_agua" onclick="toggleCorpo('agua')" class="card-option p-3 rounded-2xl text-center bg-gray-50">
+              <span class="text-2xl block mb-1">💧</span>
+              <span class="text-xs font-semibold text-gray-700">Sede</span>
+            </button>
+          </div>
+        </div>
+
+        <button onclick="avancarAposCorpo()" class="w-full py-3.5 bg-gray-900 hover:bg-black text-white rounded-2xl font-semibold text-sm transition mt-4">
+          Continuar →
+        </button>
+      `;
+    }
+
+    const estadoCorpo = { resp: false, mand: false, pressa: false, agua: false };
+    window.toggleCorpo = (item) => {
+      estadoCorpo[item] = !estadoCorpo[item];
+      const btn = document.getElementById(`btn_${item}`);
+      if (estadoCorpo[item]) {
+        btn.classList.add("border-amber-400", "bg-amber-50/50");
+      } else {
+        btn.classList.remove("border-amber-400", "bg-amber-50/50");
+      }
+    };
+
+    window.avancarAposCorpo = () => {
+      // Se tiver pressa alta ou tensão acumulada, induz a desaceleração de 30s
+      if (estadoCorpo.pressa || estadoCorpo.mand) {
+        renderTimerDesaceleracao();
+      } else {
+        renderPainelExecutivo();
+      }
+    };
+
+    // 4. DESACELERAÇÃO (Timer Relaxante de 30 Segundos)
+    function renderTimerDesaceleracao() {
+      let segundos = 30;
+      stepContent.className = "flex-grow flex flex-col justify-between items-center my-auto py-6 fade-in text-center";
+      
+      const updateTimerHTML = () => {
+        stepContent.innerHTML = `
+          <div class="space-y-2">
+            <span class="text-4xl">🚶</span>
+            <h2 class="text-xl font-bold text-gray-800">Ande mais devagar</h2>
+            <p class="text-xs text-gray-500 max-w-xs mx-auto">Detectamos tensão/pressa. Apenas caminhe em ritmo calmo até a porta.</p>
+          </div>
+
+          <div class="my-6 relative flex items-center justify-center">
+            <div class="w-28 h-28 rounded-full border-4 border-amber-200 flex items-center justify-center bg-amber-50">
+              <span class="text-3xl font-bold text-amber-800">${segundos}s</span>
+            </div>
+          </div>
+
+          <button onclick="renderPainelExecutivo()" class="text-xs text-gray-400 underline hover:text-gray-600">
+            Pular timer
+          </button>
+        `;
+      };
+
+      updateTimerHTML();
+      const interval = setInterval(() => {
+        segundos--;
+        if (segundos <= 0) {
+          clearInterval(interval);
+          renderPainelExecutivo();
+        } else {
+          updateTimerHTML();
+        }
+      }, 1000);
+    }
+
+    // 5. PAINEL EXECUTIVO: Missão Única do Dia
+    function renderPainelExecutivo() {
+      progressBar.style.width = `100%`;
+      stepCounter.textContent = `Missão`;
+
+      stepContent.className = "flex-grow flex flex-col justify-between my-auto py-2 fade-in";
+      stepContent.innerHTML = `
+        <div class="space-y-4">
+          <div class="text-center">
+            <span class="text-3xl">🎯</span>
+            <h2 class="text-lg font-bold text-gray-800 mt-1">Qual é a ÚNICA missão do dia?</h2>
+            <p class="text-xs text-gray-400">Escolha o foco do dia de hoje:</p>
+          </div>
+
+          <div class="space-y-2">
+            <button onclick="escolherMissao('🏪 Loja')" class="card-option w-full p-3 rounded-xl bg-gray-50 hover:bg-gray-100 flex items-center gap-3 text-left">
+              <span class="text-lg">🏪</span>
+              <span class="text-xs font-semibold text-gray-700">Loja (Sobreviver / Operação)</span>
+            </button>
+
+            <button onclick="escolherMissao('🌱 Continuidade')" class="card-option w-full p-3 rounded-xl bg-gray-50 hover:bg-gray-100 flex items-center gap-3 text-left">
+              <span class="text-lg">🌱</span>
+              <span class="text-xs font-semibold text-gray-700">Estudos / Projetos</span>
+            </button>
+
+            <button onclick="escolherMissao('🏠 Casa')" class="card-option w-full p-3 rounded-xl bg-gray-50 hover:bg-gray-100 flex items-center gap-3 text-left">
+              <span class="text-lg">🏠</span>
+              <span class="text-xs font-semibold text-gray-700">Manutenção da Casa</span>
+            </button>
+
+            <button onclick="escolherMissao('❤️ Saúde')" class="card-option w-full p-3 rounded-xl bg-gray-50 hover:bg-gray-100 flex items-center gap-3 text-left">
+              <span class="text-lg">❤️</span>
+              <span class="text-xs font-semibold text-gray-700">Regulação / Descanso</span>
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    window.escolherMissao = (missao) => {
+      estado.missaoEscolhida = missao;
+      renderSubMissao(missao);
+    };
+
+    function renderSubMissao(missao) {
+      stepContent.className = "flex-grow flex flex-col justify-between my-auto py-2 fade-in";
+      stepContent.innerHTML = `
+        <div class="space-y-4">
+          <div class="text-center">
+            <span class="text-3xl">✨</span>
+            <h2 class="text-lg font-bold text-gray-800 mt-1">${missao}</h2>
+            <p class="text-xs text-gray-400">Hoje é só...</p>
+          </div>
+
+          <div class="space-y-2">
+            <button onclick="finalizarDecolagem('Só fazer o mínimo viável')" class="card-option w-full p-3.5 rounded-xl bg-gray-50 hover:bg-gray-100 text-xs font-semibold text-gray-700 text-left">
+              ○ Só fazer o mínimo viável
+            </button>
+            <button onclick="finalizarDecolagem('Só manter a ordem e calma')" class="card-option w-full p-3.5 rounded-xl bg-gray-50 hover:bg-gray-100 text-xs font-semibold text-gray-700 text-left">
+              ○ Só manter a calma e a ordem
+            </button>
+            <button onclick="finalizarDecolagem('Só concluir o principal')" class="card-option w-full p-3.5 rounded-xl bg-gray-50 hover:bg-gray-100 text-xs font-semibold text-gray-700 text-left">
+              ○ Só concluir o principal
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    // 6. CONCLUSÃO DA DECOLAGEM
+    window.finalizarDecolagem = async (detalhe) => {
+      estado.missaoDetalhe = detalhe;
+
+      // Salva os dados no Firebase de forma silenciosa
+      try {
+        await addDoc(registrosCol, {
+          data: new Date().toISOString(),
+          humor: estado.humor,
+          modoEmergencia: estado.modoEmergencia,
+          missao: estado.missaoEscolhida,
+          detalheMissao: detalhe,
+          criadoEm: serverTimestamp()
+        });
+      } catch (e) {
+        console.error("Erro ao salvar registro: ", e);
+      }
+
+      headerProgress.classList.add("hidden");
+      stepContent.className = "flex-grow flex flex-col justify-center items-center my-auto py-6 text-center fade-in";
+      stepContent.innerHTML = `
+        <div class="space-y-4">
+          <span class="text-6xl block animate-bounce">🚀</span>
+          <h1 class="text-2xl font-bold text-gray-800">Decolagem Concluída!</h1>
+          <p class="text-xs text-gray-500 max-w-xs leading-relaxed">
+            Sua missão de hoje: <br>
+            <strong class="text-emerald-700 text-sm font-semibold">${estado.missaoEscolhida} — ${detalhe}</strong>
+          </p>
+          <div class="p-3 bg-emerald-50 rounded-2xl border border-emerald-100 text-[11px] text-emerald-800">
+            Você está segura, medicada e pronta. Bom dia! 🌿
+          </div>
+        </div>
+
+        <button onclick="renderInicio()" class="mt-8 text-xs text-gray-400 hover:text-gray-600 underline">
+          Reiniciar Decolagem
+        </button>
+      `;
+    };
+
+    // Inicia a Aplicação na Home
+    renderInicio();
+  </script>
+</body>
+</html>
