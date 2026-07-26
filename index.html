@@ -36,7 +36,7 @@
 
   <main id="appContainer" class="w-full max-w-md bg-white rounded-3xl shadow-xl shadow-gray-100/80 border border-gray-100 p-5 min-h-[520px] flex flex-col justify-between overflow-hidden relative">
     
-    <!-- Barra de Progresso Superior (Oculta na Home) -->
+    <!-- Barra de Progresso Superior -->
     <header id="headerProgress" class="hidden mb-4">
       <div class="flex justify-between items-center text-[11px] font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">
         <span id="stepLabel">DECOLAGEM</span>
@@ -69,7 +69,6 @@
       serverTimestamp 
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // Firebase Config (Mesmo projeto do anterior)
     const firebaseConfig = {
       apiKey: "AIzaSyCYvPDnsLv0hJ9sIqFkgBzgghUzG6RE2lU",
       authDomain: "processos-52f4c.firebaseapp.com",
@@ -85,23 +84,22 @@
     const registrosCol = collection(db, "decolagem_registros");
 
     // Banco de Tarefas / Etapas
-    const tarefasHard: array = [
+    const tarefasHard = [
       { id: "remedios", icone: "💊", titulo: "Remédios + Água", detalhe: "Prioridade absoluta. Coma algo se necessário.", essenciaisApenas: true },
       { id: "desodorante", icone: "🧴", titulo: "Desodorante", detalhe: "Ação rápida de higiene básica.", essenciaisApenas: true },
       { id: "dentes", icone: "🪥", titulo: "Escovar Dentes", detalhe: "Higiene mínima.", essenciaisApenas: false },
       { id: "cabelo", icone: "💇‍♀️", titulo: "Prender / Pentear Cabelo", detalhe: "Coque ou rabo em 30 segundos.", essenciaisApenas: false },
       { id: "combustivel", icone: "🥤", titulo: "Garrafa d'Água & Lanche", detalhe: "Pegue a garrafa abastecida.", essenciaisApenas: true },
       { id: "pets", icone: "🐶", titulo: "Pets Protegidos", detalhe: "Água, comida e 10s de carinho.", essenciaisApenas: true },
-      { id: "porta", icone: "🚪", titulo: "Check-in de Saída (Na Mão)", detalhe: "Celular, Carteira, Chaves e Bolsa.", essenciaisApenas: true },
+      { id: "porta", icone: "🚪", titulo: "Check-in de Saída (Na Mão)", detalhe: "Celular, Carteira, Chaves e Bolsa.", essenciaisApenas: true }
     ];
 
     // Estado Atual do App
     let estado = {
-      humor: null, // 'verde', 'amarelo', 'vermelho'
+      humor: null,
       modoEmergencia: false,
       tarefasFiltradas: [],
       passoAtualIndex: 0,
-      respostasCorpo: [],
       missaoEscolhida: null,
       missaoDetalhe: null
     };
@@ -111,7 +109,7 @@
     const progressBar = document.getElementById("progressBar");
     const stepCounter = document.getElementById("stepCounter");
 
-    // 1. TELA INICIAL: Estado Emocional/Físico
+    // 1. TELA INICIAL
     function renderInicio() {
       headerProgress.classList.add("hidden");
       stepContent.className = "flex-grow flex flex-col justify-center my-auto fade-in";
@@ -123,7 +121,7 @@
         </div>
 
         <div class="space-y-3">
-          <button onclick="selecionarEstado('verde')" class="card-option w-full p-4 rounded-2xl bg-emerald-50/60 hover:bg-emerald-50 border-emerald-100 flex items-center justify-between text-left">
+          <button onclick="window.selecionarEstado('verde')" class="card-option w-full p-4 rounded-2xl bg-emerald-50/60 hover:bg-emerald-50 border-emerald-100 flex items-center justify-between text-left">
             <div class="flex items-center gap-3">
               <span class="text-2xl">🟢</span>
               <div>
@@ -134,7 +132,7 @@
             <span class="text-emerald-400 font-bold">→</span>
           </button>
 
-          <button onclick="selecionarEstado('amarelo')" class="card-option w-full p-4 rounded-2xl bg-amber-50/60 hover:bg-amber-50 border-amber-100 flex items-center justify-between text-left">
+          <button onclick="window.selecionarEstado('amarelo')" class="card-option w-full p-4 rounded-2xl bg-amber-50/60 hover:bg-amber-50 border-amber-100 flex items-center justify-between text-left">
             <div class="flex items-center gap-3">
               <span class="text-2xl">🟡</span>
               <div>
@@ -145,7 +143,7 @@
             <span class="text-amber-400 font-bold">→</span>
           </button>
 
-          <button onclick="selecionarEstado('vermelho')" class="card-option w-full p-4 rounded-2xl bg-rose-50/60 hover:bg-rose-50 border-rose-100 flex items-center justify-between text-left">
+          <button onclick="window.selecionarEstado('vermelho')" class="card-option w-full p-4 rounded-2xl bg-rose-50/60 hover:bg-rose-50 border-rose-100 flex items-center justify-between text-left">
             <div class="flex items-center gap-3">
               <span class="text-2xl">🔴</span>
               <div>
@@ -159,12 +157,11 @@
       `;
     }
 
-    // Processa a escolha do estado
+    // Seleção de estado
     window.selecionarEstado = (humor) => {
       estado.humor = humor;
       estado.modoEmergencia = (humor === 'vermelho');
 
-      // Filtra tarefas se for emergência
       if (estado.modoEmergencia) {
         estado.tarefasFiltradas = tarefasHard.filter(t => t.essenciaisApenas);
       } else {
@@ -175,7 +172,7 @@
       renderPassos();
     };
 
-    // 2. EXIBIÇÃO DE TAREFAS - Uma por uma
+    // 2. EXIBIÇÃO DE TAREFAS
     function renderPassos() {
       headerProgress.classList.remove("hidden");
       const total = estado.tarefasFiltradas.length;
@@ -206,7 +203,7 @@
           </div>
         </div>
 
-        <button onclick="proximaTarefa()" class="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-semibold text-sm shadow-lg shadow-emerald-600/20 active:scale-95 transition">
+        <button onclick="window.proximaTarefa()" class="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-semibold text-sm shadow-lg shadow-emerald-600/20 active:scale-95 transition">
           Concluído ✓
         </button>
       `;
@@ -217,7 +214,7 @@
       renderPassos();
     };
 
-    // 3. CHECK CORPORAL RELÂMPAGO (4 bolhas intuitivas)
+    // 3. CHECK CORPORAL RELÂMPAGO
     function renderCheckCorporal() {
       progressBar.style.width = `85%`;
       stepCounter.textContent = `Regulação`;
@@ -232,26 +229,26 @@
           </div>
 
           <div class="grid grid-cols-2 gap-3">
-            <button id="btn_resp" onclick="toggleCorpo('resp')" class="card-option p-3 rounded-2xl text-center bg-gray-50">
+            <button id="btn_resp" onclick="window.toggleCorpo('resp')" class="card-option p-3 rounded-2xl text-center bg-gray-50">
               <span class="text-2xl block mb-1">🙂</span>
               <span class="text-xs font-semibold text-gray-700">Respiração</span>
             </button>
-            <button id="btn_mand" onclick="toggleCorpo('mand')" class="card-option p-3 rounded-2xl text-center bg-gray-50">
+            <button id="btn_mand" onclick="window.toggleCorpo('mand')" class="card-option p-3 rounded-2xl text-center bg-gray-50">
               <span class="text-2xl block mb-1">😬</span>
               <span class="text-xs font-semibold text-gray-700">Mandíbula Solta</span>
             </button>
-            <button id="btn_pressa" onclick="toggleCorpo('pressa')" class="card-option p-3 rounded-2xl text-center bg-gray-50">
+            <button id="btn_pressa" onclick="window.toggleCorpo('pressa')" class="card-option p-3 rounded-2xl text-center bg-gray-50">
               <span class="text-2xl block mb-1">🏃</span>
               <span class="text-xs font-semibold text-gray-700">Pressa Alta</span>
             </button>
-            <button id="btn_agua" onclick="toggleCorpo('agua')" class="card-option p-3 rounded-2xl text-center bg-gray-50">
+            <button id="btn_agua" onclick="window.toggleCorpo('agua')" class="card-option p-3 rounded-2xl text-center bg-gray-50">
               <span class="text-2xl block mb-1">💧</span>
               <span class="text-xs font-semibold text-gray-700">Sede</span>
             </button>
           </div>
         </div>
 
-        <button onclick="avancarAposCorpo()" class="w-full py-3.5 bg-gray-900 hover:bg-black text-white rounded-2xl font-semibold text-sm transition mt-4">
+        <button onclick="window.avancarAposCorpo()" class="w-full py-3.5 bg-gray-900 hover:bg-black text-white rounded-2xl font-semibold text-sm transition mt-4">
           Continuar →
         </button>
       `;
@@ -269,7 +266,6 @@
     };
 
     window.avancarAposCorpo = () => {
-      // Se tiver pressa alta ou tensão acumulada, induz a desaceleração de 30s
       if (estadoCorpo.pressa || estadoCorpo.mand) {
         renderTimerDesaceleracao();
       } else {
@@ -277,7 +273,7 @@
       }
     };
 
-    // 4. DESACELERAÇÃO (Timer Relaxante de 30 Segundos)
+    // 4. DESACELERAÇÃO
     function renderTimerDesaceleracao() {
       let segundos = 30;
       stepContent.className = "flex-grow flex flex-col justify-between items-center my-auto py-6 fade-in text-center";
@@ -296,7 +292,7 @@
             </div>
           </div>
 
-          <button onclick="renderPainelExecutivo()" class="text-xs text-gray-400 underline hover:text-gray-600">
+          <button onclick="window.renderPainelExecutivo()" class="text-xs text-gray-400 underline hover:text-gray-600">
             Pular timer
           </button>
         `;
@@ -314,8 +310,8 @@
       }, 1000);
     }
 
-    // 5. PAINEL EXECUTIVO: Missão Única do Dia
-    function renderPainelExecutivo() {
+    // 5. PAINEL EXECUTIVO
+    window.renderPainelExecutivo = function() {
       progressBar.style.width = `100%`;
       stepCounter.textContent = `Missão`;
 
@@ -329,29 +325,29 @@
           </div>
 
           <div class="space-y-2">
-            <button onclick="escolherMissao('🏪 Loja')" class="card-option w-full p-3 rounded-xl bg-gray-50 hover:bg-gray-100 flex items-center gap-3 text-left">
+            <button onclick="window.escolherMissao('🏪 Loja')" class="card-option w-full p-3 rounded-xl bg-gray-50 hover:bg-gray-100 flex items-center gap-3 text-left">
               <span class="text-lg">🏪</span>
               <span class="text-xs font-semibold text-gray-700">Loja (Sobreviver / Operação)</span>
             </button>
 
-            <button onclick="escolherMissao('🌱 Continuidade')" class="card-option w-full p-3 rounded-xl bg-gray-50 hover:bg-gray-100 flex items-center gap-3 text-left">
+            <button onclick="window.escolherMissao('🌱 Continuidade')" class="card-option w-full p-3 rounded-xl bg-gray-50 hover:bg-gray-100 flex items-center gap-3 text-left">
               <span class="text-lg">🌱</span>
               <span class="text-xs font-semibold text-gray-700">Estudos / Projetos</span>
             </button>
 
-            <button onclick="escolherMissao('🏠 Casa')" class="card-option w-full p-3 rounded-xl bg-gray-50 hover:bg-gray-100 flex items-center gap-3 text-left">
+            <button onclick="window.escolherMissao('🏠 Casa')" class="card-option w-full p-3 rounded-xl bg-gray-50 hover:bg-gray-100 flex items-center gap-3 text-left">
               <span class="text-lg">🏠</span>
               <span class="text-xs font-semibold text-gray-700">Manutenção da Casa</span>
             </button>
 
-            <button onclick="escolherMissao('❤️ Saúde')" class="card-option w-full p-3 rounded-xl bg-gray-50 hover:bg-gray-100 flex items-center gap-3 text-left">
+            <button onclick="window.escolherMissao('❤️ Saúde')" class="card-option w-full p-3 rounded-xl bg-gray-50 hover:bg-gray-100 flex items-center gap-3 text-left">
               <span class="text-lg">❤️</span>
               <span class="text-xs font-semibold text-gray-700">Regulação / Descanso</span>
             </button>
           </div>
         </div>
       `;
-    }
+    };
 
     window.escolherMissao = (missao) => {
       estado.missaoEscolhida = missao;
@@ -369,13 +365,13 @@
           </div>
 
           <div class="space-y-2">
-            <button onclick="finalizarDecolagem('Só fazer o mínimo viável')" class="card-option w-full p-3.5 rounded-xl bg-gray-50 hover:bg-gray-100 text-xs font-semibold text-gray-700 text-left">
+            <button onclick="window.finalizarDecolagem('Só fazer o mínimo viável')" class="card-option w-full p-3.5 rounded-xl bg-gray-50 hover:bg-gray-100 text-xs font-semibold text-gray-700 text-left">
               ○ Só fazer o mínimo viável
             </button>
-            <button onclick="finalizarDecolagem('Só manter a ordem e calma')" class="card-option w-full p-3.5 rounded-xl bg-gray-50 hover:bg-gray-100 text-xs font-semibold text-gray-700 text-left">
+            <button onclick="window.finalizarDecolagem('Só manter a ordem e calma')" class="card-option w-full p-3.5 rounded-xl bg-gray-50 hover:bg-gray-100 text-xs font-semibold text-gray-700 text-left">
               ○ Só manter a calma e a ordem
             </button>
-            <button onclick="finalizarDecolagem('Só concluir o principal')" class="card-option w-full p-3.5 rounded-xl bg-gray-50 hover:bg-gray-100 text-xs font-semibold text-gray-700 text-left">
+            <button onclick="window.finalizarDecolagem('Só concluir o principal')" class="card-option w-full p-3.5 rounded-xl bg-gray-50 hover:bg-gray-100 text-xs font-semibold text-gray-700 text-left">
               ○ Só concluir o principal
             </button>
           </div>
@@ -387,7 +383,6 @@
     window.finalizarDecolagem = async (detalhe) => {
       estado.missaoDetalhe = detalhe;
 
-      // Salva os dados no Firebase de forma silenciosa
       try {
         await addDoc(registrosCol, {
           data: new Date().toISOString(),
@@ -398,14 +393,14 @@
           criadoEm: serverTimestamp()
         });
       } catch (e) {
-        console.error("Erro ao salvar registro: ", e);
+        console.error("Aviso do Firebase:", e);
       }
 
       headerProgress.classList.add("hidden");
       stepContent.className = "flex-grow flex flex-col justify-center items-center my-auto py-6 text-center fade-in";
       stepContent.innerHTML = `
         <div class="space-y-4">
-          <span class="text-6xl block animate-bounce">🚀</span>
+          <span class="text-6xl block">🚀</span>
           <h1 class="text-2xl font-bold text-gray-800">Decolagem Concluída!</h1>
           <p class="text-xs text-gray-500 max-w-xs leading-relaxed">
             Sua missão de hoje: <br>
@@ -416,13 +411,13 @@
           </div>
         </div>
 
-        <button onclick="renderInicio()" class="mt-8 text-xs text-gray-400 hover:text-gray-600 underline">
+        <button onclick="window.renderInicio()" class="mt-8 text-xs text-gray-400 hover:text-gray-600 underline">
           Reiniciar Decolagem
         </button>
       `;
     };
 
-    // Inicia a Aplicação na Home
+    window.renderInicio = renderInicio;
     renderInicio();
   </script>
 </body>
